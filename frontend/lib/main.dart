@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
+import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/habit_list_screen.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(const HabitTrackerApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class HabitTrackerApp extends StatelessWidget {
+  const HabitTrackerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Smart Habit Tracker',
+      theme: ThemeData(
+        brightness: Brightness.light,
+        useMaterial3: true,
       ),
+      home: const SplashScreen(),
+      routes: {
+        '/login': (_) => const LoginScreen(),
+        '/habits': (_) => const HabitListScreen(),
+      },
     );
   }
 }

@@ -9,7 +9,7 @@ import habitRoutes from "./routes/habitRoutes.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 connectDB();
 
@@ -26,6 +26,6 @@ app.get("/", (req, res) => {
   res.send("Smart Habit Tracker backend running!");
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
