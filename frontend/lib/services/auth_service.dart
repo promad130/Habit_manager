@@ -27,4 +27,30 @@ class AuthService {
       throw Exception(data['message'] ?? 'Login failed');
     }
   }
+
+  static Future<String> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/register'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 201 && data['success'] == true) {
+      return data['userId'];
+    } else {
+      throw Exception(data['message'] ?? 'Registration failed');
+    }
+  }
 }

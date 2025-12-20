@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 import 'screens/habit_list_screen.dart';
 
 void main() {
@@ -22,6 +23,7 @@ class HabitTrackerApp extends StatelessWidget {
       home: const SplashScreen(),
       routes: {
         '/login': (_) => const LoginScreen(),
+        '/register': (_) => const RegisterScreen(),
         '/habits': (_) => const HabitListScreen(),
       },
     );
