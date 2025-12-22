@@ -3,6 +3,7 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/habit_list_screen.dart';
+import 'screens/add_habit_screen.dart';
 
 void main() {
   runApp(const HabitTrackerApp());
@@ -25,6 +26,7 @@ class HabitTrackerApp extends StatelessWidget {
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
         '/habits': (_) => const HabitListScreen(),
+        '/add-habit': (_) => const AddHabitScreen(),
       },
     );
   }
