@@ -30,6 +30,7 @@ class _HabitListScreenState extends State<HabitListScreen> {
     return "${days[now.weekday % 7]}, ${now.day} ${months[now.month - 1]}";
   }
   String selectedFrequency = 'daily';
+  String selectedStatus = 'all';
 
   @override
   void initState() {
@@ -114,15 +115,62 @@ class _HabitListScreenState extends State<HabitListScreen> {
     );
   }
 
+  Future<void> _toggleArchive(Habit habit) async {
+    try {
+      final userId = await SessionManager.getUserId();
+      if (userId == null) throw Exception("Not logged in");
+
+      final newStatus =
+          habit.status == 'active' ? 'archived' : 'active';
+
+      await HabitService.updateHabit(
+        habitId: habit.id,
+        userId: userId,
+        updates: {
+          'status': newStatus,
+        },
+      );
+
+      await _loadHabits();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filteredHabits = habits
-    .where((h) => h.frequency == selectedFrequency)
-    .toList();
+    final filteredHabits = habits.where((habit) {
+      final matchesFrequency = habit.frequency == selectedFrequency;
+
+      final matchesStatus = selectedStatus == 'all'
+          ? true
+          : habit.status == selectedStatus;
+
+      return matchesFrequency && matchesStatus;
+    }).toList();
     return Scaffold(
       appBar: AppBar(
         title: const Text("My Habits"),
         actions: [
+          DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: selectedStatus,
+              icon: const Icon(Icons.filter_list, color: Colors.white),
+              dropdownColor: Theme.of(context).colorScheme.surface,
+              items: const [
+                DropdownMenuItem(value: 'all', child: Text("All")),
+                DropdownMenuItem(value: 'active', child: Text("Active")),
+                DropdownMenuItem(value: 'archived', child: Text("Archived")),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  selectedStatus = value!;
+                });
+              },
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
@@ -165,11 +213,24 @@ class _HabitListScreenState extends State<HabitListScreen> {
                               itemBuilder: (context, index) {
                                 final habit = filteredHabits[index];
                                 return ListTile(
-                                  title: Text(habit.title),
-                                  subtitle: Text(
-                                    "${habit.frequency} • ${habit.status}",
+                                  title: Text(
+                                    habit.title,
+                                    style: TextStyle(
+                                      decoration: habit.status == 'archived'
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                    ),
                                   ),
-                                  onTap:() {
+                                  subtitle: Text("${habit.frequency} • ${habit.status}"),
+                                  trailing: IconButton(
+                                    icon: Icon(
+                                      habit.status == 'archived'
+                                          ? Icons.unarchive
+                                          : Icons.archive,
+                                    ),
+                                    onPressed: () => _toggleArchive(habit),
+                                  ),
+                                  onTap: () {
                                     _showHabitDialog(habit);
                                   },
                                 );

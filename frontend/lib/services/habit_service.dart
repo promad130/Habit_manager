@@ -81,10 +81,29 @@ class HabitService {
         'userId': userId,
       }),
     );
-  
+
     if (response.statusCode != 200) {
       final data = jsonDecode(response.body);
       throw Exception(data['message'] ?? 'Failed to delete habit');
+    }
+  }
+  static Future<void> updateHabit({
+    required String habitId,
+    required String userId,
+    required Map<String, dynamic> updates,
+  }) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/$habitId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'userId': userId,
+        ...updates,
+      }),
+    );
+  
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['message'] ?? 'Failed to update habit');
     }
   }
 }
