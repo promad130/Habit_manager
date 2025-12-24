@@ -51,21 +51,20 @@ class HabitService {
     required String habitId,
     required String date,
     required String userId,
+    bool completed = true,
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/$habitId/mark'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'date': date,
         'userId': userId,
+        'completed': completed,
       }),
     );
-
+  
     if (response.statusCode != 200) {
-      final data = jsonDecode(response.body);
-      throw Exception(data['message'] ?? 'Failed to mark habit');
+      throw Exception("Failed to update habit log");
     }
   }
   static Future<void> deleteHabit({
@@ -100,10 +99,33 @@ class HabitService {
         ...updates,
       }),
     );
-  
+
     if (response.statusCode != 200) {
       final data = jsonDecode(response.body);
       throw Exception(data['message'] ?? 'Failed to update habit');
+    }
+  }
+  static Future<List<dynamic>> getLogs(String habitId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/$habitId/logs'),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load logs');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getStats(String habitId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/$habitId/stats'),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load stats');
     }
   }
 }

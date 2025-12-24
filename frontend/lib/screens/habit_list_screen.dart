@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/habit_card.dart';
 import '../utils/sess_manager.dart';
 import '../models/habit.dart';
 import '../services/habit_service.dart';
@@ -15,6 +16,7 @@ class _HabitListScreenState extends State<HabitListScreen> {
   bool isLoading = true;
   String? error;
   List<Habit> habits = [];
+  Map<String, List<dynamic>> habitLogs = {};
   String _formattedToday() {
     final now = DateTime.now();
     const days = [
@@ -59,8 +61,19 @@ class _HabitListScreenState extends State<HabitListScreen> {
 
       final data = await HabitService.getHabits(userId: userId);
 
+      final fetchedHabits =
+          data.map((e) => Habit.fromJson(e)).toList();
+
+      final Map<String, List<dynamic>> logsMap = {};
+
+      for (final habit in fetchedHabits) {
+        final logs = await HabitService.getLogs(habit.id);
+        logsMap[habit.id] = logs;
+      }
+
       setState(() {
-        habits = data.map((e) => Habit.fromJson(e)).toList();
+        habits = fetchedHabits;
+        habitLogs = logsMap;
         isLoading = false;
       });
     } catch (e) {
@@ -85,32 +98,65 @@ class _HabitListScreenState extends State<HabitListScreen> {
   Widget _frequencyToggle() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: ChoiceChip(
-              label: const Text("Daily"),
-              selected: selectedFrequency == 'daily',
-              onSelected: (_) {
-                setState(() {
-                  selectedFrequency = 'daily';
-                });
-              },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final isDaily = selectedFrequency == 'daily';
+
+          return Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Stack(
+              children: [
+                AnimatedAlign(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOut,
+                  alignment:
+                      isDaily ? Alignment.centerLeft : Alignment.centerRight,
+                  child: Container(
+                    width: width / 2,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    _toggleItem("Daily", "daily"),
+                    _toggleItem("Weekly", "weekly"),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _toggleItem(String label, String value) {
+    final selected = selectedFrequency == value;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() => selectedFrequency = value);
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: selected ? Colors.black : Colors.grey,
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ChoiceChip(
-              label: const Text("Weekly"),
-              selected: selectedFrequency == 'weekly',
-              onSelected: (_) {
-                setState(() {
-                  selectedFrequency = 'weekly';
-                });
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -138,6 +184,32 @@ class _HabitListScreenState extends State<HabitListScreen> {
       );
     }
   }
+  bool isHabitCompleted(Habit habit) {
+    final logs = habitLogs[habit.id] ?? [];
+
+    if (logs.isEmpty) return false;
+
+    final now = DateTime.now();
+
+    if (habit.frequency == 'daily') {
+      final todayStr = now.toIso8601String().split('T')[0];
+
+      return logs.any(
+        (log) =>
+            log['date'] == todayStr &&
+            log['completed'] == true,
+      );
+    }
+
+    // weekly
+    final weekAgo = now.subtract(const Duration(days: 7));
+
+    return logs.any((log) {
+      if (log['completed'] != true) return false;
+      final logDate = DateTime.parse(log['date']);
+      return logDate.isAfter(weekAgo);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -152,29 +224,30 @@ class _HabitListScreenState extends State<HabitListScreen> {
     }).toList();
     return Scaffold(
       appBar: AppBar(
-        title: const Text("My Habits"),
+        centerTitle: true,
+        title: const Text(
+          "Habit Forge",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: selectedStatus,
-              icon: const Icon(Icons.filter_list, color: Colors.white),
-              dropdownColor: Theme.of(context).colorScheme.surface,
-              items: const [
-                DropdownMenuItem(value: 'all', child: Text("All")),
-                DropdownMenuItem(value: 'active', child: Text("Active")),
-                DropdownMenuItem(value: 'archived', child: Text("Archived")),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  selectedStatus = value!;
-                });
-              },
+          PopupMenuButton<String>(
+            icon: const CircleAvatar(
+              radius: 16,
+              child: Icon(Icons.person, size: 18),
             ),
+            onSelected: (value) {
+              if (value == 'logout') {
+                _logout();
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'logout',
+                child: Text("Logout"),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: isLoading
@@ -182,7 +255,7 @@ class _HabitListScreenState extends State<HabitListScreen> {
           : error != null
               ? Center(child: Text(error!))
               : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 16),
 
@@ -201,50 +274,67 @@ class _HabitListScreenState extends State<HabitListScreen> {
 
                     _frequencyToggle(),
 
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "${filteredHabits.length} habits",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.filter_alt_outlined),
+                            onSelected: (value) {
+                              setState(() => selectedStatus = value);
+                            },
+                            itemBuilder: (context) => const [
+                              PopupMenuItem(value: 'all', child: Text("All")),
+                              PopupMenuItem(value: 'active', child: Text("Active")),
+                              PopupMenuItem(value: 'archived', child: Text("Archived")),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
                     const SizedBox(height: 12),
 
                     Expanded(
                       child: filteredHabits.isEmpty
                           ? const Center(
-                              child: Text("No habits for this frequency"),
+                              child: Text(
+                                "No habits here yet 👀",
+                                style: TextStyle(color: Colors.grey),
+                              ),
                             )
                           : ListView.builder(
+                              padding: const EdgeInsets.only(bottom: 80),
                               itemCount: filteredHabits.length,
                               itemBuilder: (context, index) {
                                 final habit = filteredHabits[index];
-                                return ListTile(
-                                  title: Text(
-                                    habit.title,
-                                    style: TextStyle(
-                                      decoration: habit.status == 'archived'
-                                          ? TextDecoration.lineThrough
-                                          : null,
-                                    ),
-                                  ),
-                                  subtitle: Text("${habit.frequency} • ${habit.status}"),
-                                  trailing: IconButton(
-                                    icon: Icon(
-                                      habit.status == 'archived'
-                                          ? Icons.unarchive
-                                          : Icons.archive,
-                                    ),
-                                    onPressed: () => _toggleArchive(habit),
-                                  ),
-                                  onTap: () {
-                                    _showHabitDialog(habit);
-                                  },
+                    
+                                return HabitCard(
+                                  habit: habit,
+                                  isCompleted: isHabitCompleted(habit),
+                                  onTap: () => _showHabitDialog(habit),
+                                  onArchive: () => _toggleArchive(habit),
                                 );
                               },
                             ),
                     ),
                   ],
                 ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.add),
+        label: const Text("New Habit"),
         onPressed: () {
           Navigator.pushNamed(context, '/add-habit')
               .then((_) => _loadHabits());
         },
-        child: const Icon(Icons.add),
       ),
     );
   }

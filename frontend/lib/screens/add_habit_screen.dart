@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/habit_service.dart';
 import '../utils/sess_manager.dart';
+import '../models/habit.dart';
 
 class AddHabitScreen extends StatefulWidget {
-  const AddHabitScreen({super.key});
+  final Habit? habit;
+  const AddHabitScreen({super.key,this.habit});
 
   @override
   State<AddHabitScreen> createState() => _AddHabitScreenState();
@@ -17,11 +19,20 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   bool isLoading = false;
   String? error;
 
-  Future<void> _createHabit() async {
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.habit != null) {
+      titleController.text = widget.habit!.title;
+      descriptionController.text = widget.habit!.description;
+      frequency = widget.habit!.frequency;
+    }
+  }
+
+  Future<void> _submitHabit() async {
     if (titleController.text.trim().isEmpty) {
-      setState(() {
-        error = "Title is required";
-      });
+      setState(() => error = "Title is required");
       return;
     }
 
@@ -34,23 +45,33 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
       final userId = await SessionManager.getUserId();
       if (userId == null) throw Exception("Not logged in");
 
-      await HabitService.createHabit(
-        title: titleController.text.trim(),
-        description: descriptionController.text.trim(),
-        frequency: frequency,
-        owner: userId,
-      );
+      if (widget.habit == null) {
+        // CREATE
+        await HabitService.createHabit(
+          title: titleController.text.trim(),
+          description: descriptionController.text.trim(),
+          frequency: frequency,
+          owner: userId,
+        );
+      } else {
+        // UPDATE
+        await HabitService.updateHabit(
+          habitId: widget.habit!.id,
+          userId: userId,
+          updates: {
+            'title': titleController.text.trim(),
+            'description': descriptionController.text.trim(),
+            'frequency': frequency,
+          },
+        );
+      }
 
       if (!mounted) return;
-      Navigator.pop(context); // go back to habit list
+      Navigator.pop(context);
     } catch (e) {
-      setState(() {
-        error = e.toString();
-      });
+      setState(() => error = e.toString());
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
   }
 
@@ -95,8 +116,8 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
             isLoading
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
-                    onPressed: _createHabit,
-                    child: const Text("Create Habit"),
+                    onPressed: isLoading ? null : _submitHabit,
+                    child: Text(widget.habit == null ? "Create Habit" : "Save Changes"),
                   ),
           ],
         ),
