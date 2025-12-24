@@ -1,8 +1,6 @@
 // lib/widgets/habit_card.dart
 import 'package:flutter/material.dart';
 import '../models/habit.dart';
-import '../themes/app_text.dart';
-import '../themes/app_colors.dart';
 
 class HabitCard extends StatelessWidget {
   final Habit habit;

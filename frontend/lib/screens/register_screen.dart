@@ -49,53 +49,135 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Widget _header() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: const [
+        Text(
+          "Create Account",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          "Start building better habits today.",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _registerCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            _nameField(),
+            const SizedBox(height: 16),
+            _emailField(),
+            const SizedBox(height: 16),
+            _passwordField(),
+            const SizedBox(height: 24),
+            _registerButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _nameField() {
+    return TextField(
+      controller: nameController,
+      decoration: const InputDecoration(
+        labelText: "Name",
+        hintText: "Your name",
+      ),
+    );
+  }
+
+  Widget _emailField() {
+    return TextField(
+      controller: emailController,
+      keyboardType: TextInputType.emailAddress,
+      decoration: const InputDecoration(
+        labelText: "Email",
+        hintText: "you@example.com",
+      ),
+    );
+  }
+
+  Widget _passwordField() {
+    return TextField(
+      controller: passwordController,
+      obscureText: true,
+      decoration: const InputDecoration(
+        labelText: "Password",
+      ),
+    );
+  }
+
+  Widget _registerButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : _register,
+        child: isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+                "Create Account",
+                style: TextStyle(fontSize: 16),
+              ),
+      ),
+    );
+  }
+
+  Widget _footer(BuildContext context) {
+    return Center(
+      child: TextButton(
+        onPressed: () {
+          Navigator.pushReplacementNamed(context, '/login');
+        },
+        child: const Text("Already have an account? Login"),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Register")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: "Name"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: "Email"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: "Password"),
-            ),
-            const SizedBox(height: 24),
-
-            if (error != null)
-              Text(
-                error!,
-                style: const TextStyle(color: Colors.red),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height -
+                    MediaQuery.of(context).padding.top,
               ),
-
-            isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _register,
-                    child: const Text("Create Account"),
-                  ),
-
-            const SizedBox(height: 12),
-
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("Already have an account? Login"),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    const Spacer(),
+                    Center(child: _header()),
+                    const SizedBox(height: 32),
+                    _registerCard(),
+                    const SizedBox(height: 24),
+                    _footer(context),
+                    const Spacer(),
+                  ],
+                ),
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );

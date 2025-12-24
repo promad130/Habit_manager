@@ -46,46 +46,123 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Widget _header() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: const [
+        Text(
+          "Habit Forge",
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(height: 8),
+        Text(
+          "Build consistency, one habit at a time.",
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _loginCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            _emailField(),
+            const SizedBox(height: 16),
+            _passwordField(),
+            const SizedBox(height: 24),
+            _loginButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emailField() {
+    return TextField(
+      controller: emailController,
+      keyboardType: TextInputType.emailAddress,
+      decoration: const InputDecoration(
+        labelText: "Email",
+        hintText: "you@example.com",
+      ),
+    );
+  }
+
+  Widget _passwordField() {
+    return TextField(
+      controller: passwordController,
+      obscureText: true,
+      decoration: const InputDecoration(
+        labelText: "Password",
+      ),
+    );
+  }
+
+  Widget _loginButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : _login,
+        child: isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+                "Login",
+                style: TextStyle(fontSize: 16),
+              ),
+      ),
+    );
+  }
+
+  Widget _footer(BuildContext context) {
+    return Center(
+      child: TextButton(
+        onPressed: () {
+          Navigator.pushReplacementNamed(context, '/register');
+        },
+        child: const Text("Don’t have an account? Create one"),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Login")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: "Email"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: "Password"),
-            ),
-            const SizedBox(height: 24),
-
-            if (error != null)
-              Text(
-                error!,
-                style: const TextStyle(color: Colors.red),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height -
+                    MediaQuery.of(context).padding.top,
               ),
-
-            isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _login,
-                    child: const Text("Login"),
-                  ),
-            
-            TextButton(
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, '/register');
-              },
-              child: const Text("Create an account"),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    const Spacer(),
+                    Center(child: _header()),
+                    const SizedBox(height: 32),
+                    _loginCard(),
+                    const SizedBox(height: 24),
+                    _footer(context),
+                    const Spacer(),
+                  ],
+                ),
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
